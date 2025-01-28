@@ -1,4 +1,7 @@
 using BlogAPI;
+using BlogAPI.Interfaces;
+using BlogAPI.Repository;
+using BlogAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IPostsService, PostsService>();
+builder.Services.AddScoped<IPostsRepository, PostsRepository>();
 
 
 builder.Services.AddControllers();
