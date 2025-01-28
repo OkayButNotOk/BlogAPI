@@ -1,83 +1,79 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using BlogAPI.Interfaces;
+using BlogAPI.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 
 namespace BlogAPI.Controllers
 {
-    public class PostsController : Controller
+    [ApiController]
+    [Route("[controller]")]
+    public class PostsController : ControllerBase
     {
-        // GET: HomeController
-        public ActionResult Index()
+        public readonly IPostsService _postsService;
+
+        public PostsController(IPostsService postsService)
         {
-            return View();
+            _postsService = postsService;
         }
 
-        // GET: HomeController/Details/5
-        public ActionResult Details(int id)
+        [HttpGet("api/posts")]
+        public async Task<IActionResult> GetPostsAsync()
         {
-            return View();
+            var posts = await _postsService.GetPostsAsync();
+            
+            return Ok(posts);
         }
 
-        // GET: HomeController/Create
-        public ActionResult Create()
+        [HttpGet("api/posts/{id}")]
+        public async Task<IActionResult> GetPostById(int id)
         {
-            return View();
-        }
+            var post = await _postsService.GetPostByIdAsync(id);
 
-        // POST: HomeController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
+            if (post == null)
             {
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            catch
-            {
-                return View();
-            }
+
+            return Ok(post);
         }
 
-        // GET: HomeController/Edit/5
-        public ActionResult Edit(int id)
+
+        [HttpPost("api/posts")]
+        public async Task<IActionResult> CreatePostAsync([FromBody] Post post)
         {
-            return View();
+            if (post == null) return BadRequest();
+
+            var createdPost = await _postsService.CreatePostAsync(post);
+
+            return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
         }
 
-        // POST: HomeController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        [HttpPut("api/posts/{id}")]
+        public async Task<IActionResult> UpdatePostAsync(int id, [FromBody] Post post)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            if (post == null) return BadRequest();
+
+            var existingPost = await _postsService.GetPostByIdAsync(id);
+
+            if (existingPost == null) return NotFound();
+
+            var updatedPost = await _postsService.UpdatePostAsync(id, post);
+
+            return Ok(updatedPost);
         }
 
-        // GET: HomeController/Delete/5
-        public ActionResult Delete(int id)
+        [HttpDelete("api/posts/{id}")]
+        public async Task<IActionResult> DeletePostAsync(int id)
         {
-            return View();
-        }
+            var existingPost = await _postsService.GetPostByIdAsync(id);
 
-        // POST: HomeController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            if (existingPost == null) return NotFound();
+
+            await _postsService.DeletePostAsync(id);
+
+            return NoContent();
         }
     }
 }
